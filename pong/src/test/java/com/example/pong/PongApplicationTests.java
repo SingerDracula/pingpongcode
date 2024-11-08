@@ -17,23 +17,37 @@ import java.time.Duration;
 @WebFluxTest(controllers = PongController.class)
 class PongApplicationTests {
 
-	@Autowired
-	private PongController pongController;
+    @Autowired
+    private PongController pongController;
 
-	@Autowired
-	private WebTestClient webClient;
-	@Test
-	void normal() {
-		StepVerifier.withVirtualTime(() -> {
-					webClient.get()
-							.uri("/pong/ping")
-							.exchange()
-							.expectStatus().isOk();
-					return Mono.just("");
-				})
-				.thenAwait(Duration.ofSeconds(10))
-				.expectNext("")
-				.verifyComplete();
-	}
+    @Autowired
+    private WebTestClient webClient;
+
+    @Test
+    void normal() {
+        StepVerifier.withVirtualTime(() -> {
+                    webClient.get()
+                            .uri("/pong/ping")
+                            .exchange()
+                            .expectStatus().isOk();
+                    return Mono.just("");
+                })
+                .thenAwait(Duration.ofSeconds(10))
+                .expectNext("")
+                .verifyComplete();
+    }
+
+    @Test
+    void return429() {
+        StepVerifier.withVirtualTime(() -> {
+                    return Mono.zip(
+                            pongController.pong("ping"),
+                            pongController.pong("ping"),
+                            pongController.pong("ping")
+                    ).then(Mono.empty());
+                })
+                .thenAwait(Duration.ofSeconds(5))
+                .verifyComplete();
+    }
 
 }
