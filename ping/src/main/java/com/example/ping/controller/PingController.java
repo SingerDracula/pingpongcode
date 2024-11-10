@@ -1,19 +1,14 @@
 package com.example.ping.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
 import java.time.Duration;
 
 @RestController
@@ -51,10 +46,11 @@ public class PingController {
                                     }
                                     if (lock == null) {
                                         log.info("get lock failure, rate limited");
+                                        return;
                                     }
 
                                     Mono<String> responseMono = webClient.get()
-                                            .uri("http://localhost:8081/pong/Hello")
+                                            .uri("http://localhost:8081/pong/Hello4")
                                             .retrieve()
                                             .bodyToMono(String.class);
 
@@ -71,6 +67,7 @@ public class PingController {
                                 } finally {
                                     if (lock != null) {
                                         try {
+                                            Thread.sleep(500);
                                             lock.release();
                                         } catch (Exception e) {
                                             log.error("Error releasing lock: " + e.getMessage());

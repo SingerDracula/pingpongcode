@@ -15,11 +15,12 @@ public class PongController {
     final SlidingWindowLogCounter slidingWindowLogCounter = new SlidingWindowLogCounter(1, 1000);
     @GetMapping(value = "pong/{data}")
     public Mono<ResponseEntity<String>> pong(@PathVariable String data) {
+        log.info(data);
         if (slidingWindowLogCounter.allowRequest()) {
-            log.error("request received and return");
+            log.error(data + "request received and return");
             return Mono.just(ResponseEntity.ok("World"));
         } else {
-            log.error("request received but not processed");
+            log.error(data + "request received but not processed");
             return Mono.just(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build());
         }
 

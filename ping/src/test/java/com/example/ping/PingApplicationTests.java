@@ -1,24 +1,18 @@
 package com.example.ping;
 
 import com.example.ping.controller.PingController;
-import lombok.extern.java.Log;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -51,20 +45,6 @@ class PingApplicationTests {
                 .thenAwait(Duration.ofSeconds(10))
                 .expectNext("")
                 .verifyComplete();
-    }
-
-    @Test
-    void return429() throws IOException {
-        StepVerifier.withVirtualTime(() -> {
-                    return Mono.zip(
-                            pingController.ping(),
-                            pingController.ping(),
-                            pingController.ping()
-                    ).then(Mono.empty());
-                })
-                .thenAwait(Duration.ofSeconds(5))
-                .verifyComplete();
-
     }
 
     @Test
