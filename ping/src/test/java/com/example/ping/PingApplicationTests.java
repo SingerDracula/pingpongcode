@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.io.IOException;
@@ -35,14 +34,8 @@ class PingApplicationTests {
 
     @Test
     void normal() {
-        StepVerifier.withVirtualTime(() -> {
-                    webClient.get()
-                            .uri("/ping")
-                            .exchange()
-                            .expectStatus().isOk();
-                    return Mono.just("");
-                })
-                .thenAwait(Duration.ofSeconds(10))
+        StepVerifier.withVirtualTime(() -> pingController.ping())
+                .thenAwait(Duration.ofSeconds(3))
                 .expectNext("")
                 .verifyComplete();
     }
@@ -56,21 +49,16 @@ class PingApplicationTests {
         when(mockChannel.tryLock()).thenReturn(null);
         pingController.setFile(file);
         pingController.setFile2(file2);
-        StepVerifier.withVirtualTime(() -> {
-                    webClient.get()
-                            .uri("/ping")
-                            .exchange()
-                            .expectStatus().isOk();
-                    return Mono.just("");
-                })
-                .thenAwait(Duration.ofSeconds(10))
+        StepVerifier.withVirtualTime(() -> pingController.ping())
+                .thenAwait(Duration.ofSeconds(3))
                 .expectNext("")
                 .verifyComplete();
     }
 
     @Test
     void fileAndFile2GetLockNull() throws IOException {
-        RandomAccessFile file2 = Mockito.mock(RandomAccessFile.class);;
+        RandomAccessFile file2 = Mockito.mock(RandomAccessFile.class);
+        ;
         RandomAccessFile file = Mockito.mock(RandomAccessFile.class);
         FileChannel mockChannel = Mockito.mock(FileChannel.class);
         when(file.getChannel()).thenReturn(mockChannel);
@@ -78,30 +66,32 @@ class PingApplicationTests {
         when(mockChannel.tryLock()).thenReturn(null);
         pingController.setFile(file);
         pingController.setFile2(file2);
-        StepVerifier.withVirtualTime(() -> {
-                    webClient.get()
-                            .uri("/ping")
-                            .exchange()
-                            .expectStatus().isOk();
-                    return Mono.just("");
-                })
-                .thenAwait(Duration.ofSeconds(10))
+        StepVerifier.withVirtualTime(() -> pingController.ping())
+                .thenAwait(Duration.ofSeconds(3))
                 .expectNext("")
                 .verifyComplete();
     }
 
     @Test
     void fileLocked() throws IOException {
-        RandomAccessFile file = new RandomAccessFile("/Users/zhongbo/Downloads/demo/eee.txt", "rw");
+        FileLock lock = null;
 
-        try {
-            FileLock lock = file.getChannel().tryLock();
+        try (RandomAccessFile file = new RandomAccessFile("/Users/zhongbo/Downloads/demo/eee.txt", "rw")) {
+            lock = file.getChannel().tryLock();
             StepVerifier.withVirtualTime(() -> pingController.ping())
                     .thenAwait(Duration.ofSeconds(5))
                     .expectNext("")
                     .verifyComplete();
         } catch (Exception e) {
             log.info("success");
+        } finally {
+            if (lock != null) {
+                try {
+                    lock.release();
+                } catch (Exception e) {
+                    log.error("Error releasing lock: " + e.getMessage());
+                }
+            }
         }
     }
 

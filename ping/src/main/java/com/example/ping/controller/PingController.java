@@ -22,8 +22,13 @@ public class PingController {
         this.file2 = file2;
     }
 
+    public void setMax(int max) {
+        this.max = max;
+    }
+
     private RandomAccessFile file;
     private RandomAccessFile file2;
+    private int max = 100;
 
     @GetMapping(value = "/ping")
     public Mono<String> ping() {
@@ -36,6 +41,7 @@ public class PingController {
             WebClient webClient = WebClient.create();
 
             Flux.interval(Duration.ofSeconds(1))
+                    .takeWhile(num -> num < max)
                     .subscribe(i -> {
                                 FileLock lock = null;
 
@@ -50,7 +56,7 @@ public class PingController {
                                     }
 
                                     Mono<String> responseMono = webClient.get()
-                                            .uri("http://localhost:8081/pong/Hello4")
+                                            .uri("http://127.0.0.1:8081/pong/Hello4")
                                             .retrieve()
                                             .bodyToMono(String.class);
 
@@ -80,9 +86,9 @@ public class PingController {
 
                     );
         } catch (Exception e) {
-            log.error("Error initializing files: " + e.getMessage());
+            log.error("Error: " + e.getMessage());
         }
-
+        log.info("完成");
         return Mono.just("");
     }
 
