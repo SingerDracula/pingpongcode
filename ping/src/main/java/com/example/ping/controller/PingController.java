@@ -1,6 +1,8 @@
 package com.example.ping.controller;
 
+import com.example.ping.RedisLockUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -28,15 +30,18 @@ public class PingController {
 
     private RandomAccessFile file;
     private RandomAccessFile file2;
-    private int max = 100;
+    private int max = 10000;
+
+    @Autowired
+    private RedisLockUtil redisLockUtil;
 
     @GetMapping(value = "/ping")
     public Mono<String> ping() {
         try {
-            if (file == null || file2 == null) {
-                file = new RandomAccessFile("/Users/zhongbo/Downloads/demo/eee.txt", "rw");
-                file2 = new RandomAccessFile("/Users/zhongbo/Downloads/demo/www.txt", "rw");
-            }
+//            if (file == null || file2 == null) {
+//                file = new RandomAccessFile("/Users/zhongbo/Downloads/demo/eee.txt", "rw");
+//                file2 = new RandomAccessFile("/Users/zhongbo/Downloads/demo/www.txt", "rw");
+//            }
 
             WebClient webClient = WebClient.create();
 
@@ -46,15 +51,19 @@ public class PingController {
                                 FileLock lock = null;
 
                                 try {
-                                    lock = file.getChannel().tryLock();
-                                    if (lock == null) {
-                                        lock = file2.getChannel().tryLock();
-                                    }
-                                    if (lock == null) {
-                                        log.info("get lock failure, rate limited");
+//                                    lock = file.getChannel().tryLock();
+//                                    if (lock == null) {
+//                                        lock = file2.getChannel().tryLock();
+//                                    }
+//                                    if (lock == null) {
+//                                        log.info("get lock failure, rate limited");
+//                                        return;
+//                                    }
+
+                                    if (!redisLockUtil.acquireLock()){
+                                        System.out.println("rate limited");
                                         return;
                                     }
-
                                     Mono<String> responseMono = webClient.get()
                                             .uri("http://127.0.0.1:8081/pong/Hello4")
                                             .retrieve()
