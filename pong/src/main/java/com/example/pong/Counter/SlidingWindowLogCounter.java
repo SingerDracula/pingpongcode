@@ -2,7 +2,6 @@ package com.example.pong.Counter;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class SlidingWindowLogCounter {

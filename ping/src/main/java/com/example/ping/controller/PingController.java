@@ -60,7 +60,7 @@ public class PingController {
 //                                        return;
 //                                    }
 
-                                    if (!redisLockUtil.acquireLock()){
+                                    if (!redisLockUtil.isAllowed()){
                                         System.out.println("rate limited");
                                         return;
                                     }

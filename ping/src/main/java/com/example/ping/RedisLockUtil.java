@@ -17,20 +17,31 @@ public class RedisLockUtil {
         this.redisTemplate = redisTemplate;
     }
 
-    private static final String LOCK_KEY = "process_locks";
+    private static final String KEY = "request";
     private static final int MAX_LOCK_COUNT = 2;
-    private static final long LOCK_EXPIRE_TIME = 1;
+    private static final long LIMIT_TIME = 1000;
 
-    public boolean acquireLock() {
-        Long expire = redisTemplate.getExpire(LOCK_KEY);
-        if (expire > 0 && redisTemplate.opsForValue().get(LOCK_KEY).equals("1")) {
-            System.out.println(expire);
-            redisTemplate.opsForValue().set(LOCK_KEY, "2", expire, TimeUnit.SECONDS);
-            return true;
-        } else {
-            return redisTemplate.opsForValue().setIfAbsent(LOCK_KEY, "1", LOCK_EXPIRE_TIME, TimeUnit.SECONDS);
+
+    public boolean isAllowed() {
+        long now = System.currentTimeMillis();
+        long windowStart = now - LIMIT_TIME;
+
+        // 删除时间窗口外的所有请求记录
+        redisTemplate.opsForZSet().removeRangeByScore(KEY, 0, windowStart);
+
+        // 获取当前时间窗口内的请求数
+        Long count = redisTemplate.opsForZSet().zCard(KEY);
+
+        if (count != null && count >= MAX_LOCK_COUNT) {
+            // 超出限制
+            return false;
         }
 
-    }
+        // 添加当前请求的时间戳
+        redisTemplate.opsForZSet().add(KEY, String.valueOf(now), now);
 
+        // 设置过期时间（防止数据长期占用内存）
+        redisTemplate.expire(KEY, LIMIT_TIME, TimeUnit.MILLISECONDS);
+        return true;
+    }
 }
