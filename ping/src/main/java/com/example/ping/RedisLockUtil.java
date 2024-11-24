@@ -18,11 +18,13 @@ public class RedisLockUtil {
     }
 
     private static final String KEY = "request";
+    private static final String LOCK_KEY = "lock_request";
     private static final int MAX_LOCK_COUNT = 2;
     private static final long LIMIT_TIME = 1000;
 
 
     public boolean isAllowed() {
+        tryLock();
         long now = System.currentTimeMillis();
         long windowStart = now - LIMIT_TIME;
 
@@ -35,6 +37,7 @@ public class RedisLockUtil {
         if (count != null && count >= MAX_LOCK_COUNT) {
             // 超出限制
             return false;
+
         }
 
         // 添加当前请求的时间戳
@@ -42,6 +45,17 @@ public class RedisLockUtil {
 
         // 设置过期时间（防止数据长期占用内存）
         redisTemplate.expire(KEY, LIMIT_TIME, TimeUnit.MILLISECONDS);
+        unlock();
         return true;
+    }
+
+    public boolean tryLock() {
+        // 使用 setIfAbsent 方法尝试设置 key，相当于加锁
+        Boolean success = redisTemplate.opsForValue().setIfAbsent(LOCK_KEY, "locked", 1, TimeUnit.SECONDS);
+        return success!= null && success;
+    }
+
+    public void unlock() {
+        redisTemplate.delete(LOCK_KEY);
     }
 }
