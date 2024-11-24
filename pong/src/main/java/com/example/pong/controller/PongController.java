@@ -16,10 +16,12 @@ public class PongController {
     @GetMapping(value = "pong/{data}")
     public Mono<ResponseEntity<String>> pong(@PathVariable String data) {
         log.info(data);
+        //未超出限制
         if (slidingWindowLogCounter.allowRequest()) {
             log.error(data + "request received and return");
             return Mono.just(ResponseEntity.ok("World"));
         } else {
+            //超出限制，返回 429状态码
             log.error(data + "request received but not processed");
             return Mono.just(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build());
         }

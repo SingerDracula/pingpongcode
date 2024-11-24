@@ -38,28 +38,18 @@ public class PingController {
     @GetMapping(value = "/ping")
     public Mono<String> ping() {
         try {
-//            if (file == null || file2 == null) {
-//                file = new RandomAccessFile("/Users/zhongbo/Downloads/demo/eee.txt", "rw");
-//                file2 = new RandomAccessFile("/Users/zhongbo/Downloads/demo/www.txt", "rw");
-//            }
-
             WebClient webClient = WebClient.create();
 
+            //每秒发送 1 个请求
             Flux.interval(Duration.ofSeconds(1))
+                    //限制发送邹总数
                     .takeWhile(num -> num < max)
                     .subscribe(i -> {
                                 FileLock lock = null;
 
                                 try {
-//                                    lock = file.getChannel().tryLock();
-//                                    if (lock == null) {
-//                                        lock = file2.getChannel().tryLock();
-//                                    }
-//                                    if (lock == null) {
-//                                        log.info("get lock failure, rate limited");
-//                                        return;
-//                                    }
 
+                                    //redis 实现滑动窗口计数器，控制请求 rate
                                     if (!redisLockUtil.isAllowed()){
                                         System.out.println("rate limited");
                                         return;
@@ -82,7 +72,6 @@ public class PingController {
                                 } finally {
                                     if (lock != null) {
                                         try {
-                                            Thread.sleep(500);
                                             lock.release();
                                         } catch (Exception e) {
                                             log.error("Error releasing lock: " + e.getMessage());
